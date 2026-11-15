@@ -1,10 +1,13 @@
 <script lang="ts">
   import Loader from "@lucide/svelte/icons/loader";
   import Menu from "@lucide/svelte/icons/menu";
+  import MoreHorizontal from "@lucide/svelte/icons/more-horizontal";
   import PanelLeftClose from "@lucide/svelte/icons/panel-left-close";
   import PanelLeftOpen from "@lucide/svelte/icons/panel-left-open";
   import Plus from "@lucide/svelte/icons/plus";
   import RefreshCw from "@lucide/svelte/icons/refresh-cw";
+  import Sparkles from "@lucide/svelte/icons/sparkles";
+  import Trash from "@lucide/svelte/icons/trash";
   import Trash2 from "@lucide/svelte/icons/trash-2";
   import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
   import AiCleanupDialog from "$lib/components/explorer/AiCleanupDialog.svelte";
@@ -53,6 +56,10 @@
 
   const SIDEBAR_COLLAPSED_KEY = "opencode-mem-sidebar-collapsed";
 
+  /** Row used by the mobile overflow menu of the explorer toolbar. */
+  const MENU_ITEM =
+    "flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-start text-sm text-foreground transition-colors hover:bg-surface-hover focus-ring disabled:pointer-events-none disabled:opacity-50";
+
   function readCollapsed(): boolean {
     try {
       return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "1";
@@ -78,6 +85,7 @@
   );
   let langLabel = $state(getLanguage().toUpperCase());
   let headerScrolled = $state(false);
+  let actionsMenuOpen = $state(false);
 
   const pageTitle = $derived(
     router.view === "project"
@@ -352,7 +360,7 @@
 
       {#if router.view === "project"}
         <div class={PAGE_TOOLBAR}>
-          <div class={cn("flex w-full min-w-0 items-center", GAP)}>
+          <div class={cn("flex w-full min-w-0 flex-wrap items-center", GAP)}>
             <TagFilter
               tags={explorer.tags}
               value={explorer.selectedTags}
@@ -377,25 +385,120 @@
             </div>
 
             <div class={cn("flex shrink-0 items-center", GAP)}>
-              <Button type="button" variant="outline" onclick={explorer.runCleanup}>
+              <Button
+                type="button"
+                variant="outline"
+                class="hidden md:inline-flex"
+                onclick={explorer.runCleanup}
+              >
                 <Trash2 class={ICON_SM} aria-hidden="true" />
                 {i18n.t("btn-cleanup")}
               </Button>
-              <Button type="button" variant="outline" onclick={explorer.runDeduplication}>
+              <Button
+                type="button"
+                variant="outline"
+                class="hidden md:inline-flex"
+                onclick={explorer.runDeduplication}
+              >
                 <RefreshCw class={ICON_SM} aria-hidden="true" />
                 {i18n.t("btn-deduplicate")}
               </Button>
-              <Button type="button" variant="outline" onclick={explorer.openTrash}>
+              <Button
+                type="button"
+                variant="outline"
+                class="hidden md:inline-flex"
+                onclick={explorer.openTrash}
+              >
                 {i18n.t("btn-trash")}
               </Button>
               <Button
                 type="button"
                 variant="outline"
+                class="hidden md:inline-flex"
                 disabled={explorer.dreamingBusy}
                 onclick={explorer.runDreaming}
               >
                 {i18n.t("btn-dreaming")}
               </Button>
+
+              <!-- Mobile: secondary actions collapse into an overflow menu -->
+              <div class="relative md:hidden">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  aria-label={i18n.t("btn-more-actions")}
+                  title={i18n.t("btn-more-actions")}
+                  aria-haspopup="menu"
+                  aria-expanded={actionsMenuOpen}
+                  onclick={() => (actionsMenuOpen = !actionsMenuOpen)}
+                >
+                  <MoreHorizontal class={ICON} aria-hidden="true" />
+                </Button>
+                {#if actionsMenuOpen}
+                  <button
+                    type="button"
+                    class="fixed inset-0 z-40 cursor-default bg-transparent"
+                    tabindex="-1"
+                    aria-hidden="true"
+                    onclick={() => (actionsMenuOpen = false)}
+                  ></button>
+                  <div
+                    role="menu"
+                    class="absolute start-0 top-full z-50 mt-2 w-52 rounded-xl border border-border bg-card p-1 shadow-xl"
+                  >
+                    <button
+                      type="button"
+                      role="menuitem"
+                      class={MENU_ITEM}
+                      onclick={() => {
+                        actionsMenuOpen = false;
+                        explorer.runCleanup();
+                      }}
+                    >
+                      <Trash2 class={ICON_SM} aria-hidden="true" />
+                      {i18n.t("btn-cleanup")}
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      class={MENU_ITEM}
+                      onclick={() => {
+                        actionsMenuOpen = false;
+                        explorer.runDeduplication();
+                      }}
+                    >
+                      <RefreshCw class={ICON_SM} aria-hidden="true" />
+                      {i18n.t("btn-deduplicate")}
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      class={MENU_ITEM}
+                      onclick={() => {
+                        actionsMenuOpen = false;
+                        explorer.openTrash();
+                      }}
+                    >
+                      <Trash class={ICON_SM} aria-hidden="true" />
+                      {i18n.t("btn-trash")}
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      class={MENU_ITEM}
+                      disabled={explorer.dreamingBusy}
+                      onclick={() => {
+                        actionsMenuOpen = false;
+                        explorer.runDreaming();
+                      }}
+                    >
+                      <Sparkles class={ICON_SM} aria-hidden="true" />
+                      {i18n.t("btn-dreaming")}
+                    </button>
+                  </div>
+                {/if}
+              </div>
+
               <Button
                 variant="default"
                 size="icon"

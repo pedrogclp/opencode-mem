@@ -87,7 +87,7 @@
     {#if dates.updatedDate}
       <span>{i18n.t("date-updated")} {dates.updatedDate}</span>
     {/if}
-    <span>ID: {id}</span>
+    <span class="min-w-0 max-w-full truncate" title={id}>ID: {id}</span>
   </div>
 {/snippet}
 
