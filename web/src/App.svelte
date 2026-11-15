@@ -116,6 +116,11 @@
     }
   });
 
+  // Keep the browser tab title in sync with the selected language.
+  $effect(() => {
+    document.title = i18n.t("title");
+  });
+
   $effect(() => {
     const mq = window.matchMedia("(min-width: 768px)");
     const update = () => (isDesktop = mq.matches);

@@ -1,7 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { userInfo } from "node:os";
 
-export const WEB_AUTH_REALM = "OpenCode Memory Explorer";
+export const WEB_AUTH_REALM = "Memex";
 
 export interface WebAuthOptions {
   /**
