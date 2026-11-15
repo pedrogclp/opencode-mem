@@ -2,6 +2,21 @@ import { translations, type Lang, type TranslationKey } from "./translations";
 
 const LANGS = Object.keys(translations) as Lang[];
 
+/** Native names shown in the language picker. */
+export const LANGUAGE_LABELS: Record<Lang, string> = {
+  en: "English",
+  es: "Español",
+  de: "Deutsch",
+  zh: "中文",
+  ar: "العربية",
+  tr: "Türkçe",
+  nl: "Nederlands",
+};
+
+export function getLanguages(): Lang[] {
+  return [...LANGS];
+}
+
 export type TranslateFn = (
   key: TranslationKey | string,
   params?: Record<string, string | number>

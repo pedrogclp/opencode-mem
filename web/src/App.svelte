@@ -30,7 +30,7 @@
   import SearchInput from "$lib/components/ui/search-input.svelte";
   import ToastStack from "$lib/components/ui/toast-stack.svelte";
   import ConfirmDialog from "$lib/components/ui/confirm-dialog.svelte";
-  import { cycleLanguage, getLanguage } from "$lib/i18n";
+  import { getLanguage } from "$lib/i18n";
   import { setI18nContext } from "$lib/i18n/context.svelte";
   import { getDisplayedMemoryCount } from "$lib/memory-count";
   import { initRouter, navigate, ROUTES, shouldHandleSpaClick } from "$lib/router";
@@ -179,8 +179,8 @@
     }
   });
 
-  function onLangToggle() {
-    langLabel = cycleLanguage().toUpperCase();
+  function onLanguageSelect(lang: string) {
+    langLabel = lang.toUpperCase();
     void explorer.loadMemories();
     void explorer.loadStats();
     if (router.view === "profile") void profile.loadUserProfile();
@@ -257,7 +257,7 @@
     languageLabel={i18n.t("nav-language")}
     themeLabel={i18n.t("nav-theme")}
     closeLabel={i18n.t("nav-close")}
-    {onLangToggle}
+    onLanguageSelect={onLanguageSelect}
   />
   <!-- Mobile spacer: keeps page content clear of the collapsed icon rail -->
   <div
@@ -376,7 +376,7 @@
               onChange={explorer.onTagFilterChange}
             />
 
-            <div class="flex min-w-0 flex-1 justify-center px-1">
+            <div class="flex min-w-0 flex-1 basis-52 justify-center md:px-1">
               <SearchInput
                 id="search-input"
                 class="w-full max-w-xl"

@@ -11,6 +11,8 @@
   import X from "@lucide/svelte/icons/x";
   import GithubIcon from "$lib/components/icons/GithubIcon.svelte";
   import Button from "$lib/components/ui/button.svelte";
+  import { getLanguages, LANGUAGE_LABELS, setLanguage } from "$lib/i18n";
+  import type { Lang } from "$lib/i18n/translations";
   import { navigate, ROUTES, shouldHandleSpaClick, type AppView } from "$lib/router";
   import { createTheme } from "$lib/theme.svelte";
   import { toggleTheme } from "$lib/theme";
@@ -42,8 +44,8 @@
     themeLabel: string;
     closeLabel: string;
     onOpenChange?: (open: boolean) => void;
-    onLangToggle?: () => void;
     onCollapsedChange?: (collapsed: boolean) => void;
+    onLanguageSelect?: (lang: Lang) => void;
   };
 
   let {
@@ -62,8 +64,8 @@
     themeLabel,
     closeLabel,
     onOpenChange,
-    onLangToggle,
     onCollapsedChange,
+    onLanguageSelect,
   }: Props = $props();
 
   const themeStore = createTheme();
@@ -71,7 +73,16 @@
   /** Collapse is desktop-only; mobile drawer always shows labels. */
   const iconOnly = $derived(collapsed && !open);
 
+  let langMenuOpen = $state(false);
+
+  function pickLanguage(lang: Lang) {
+    langMenuOpen = false;
+    setLanguage(lang);
+    onLanguageSelect?.(lang);
+  }
+
   function setOpen(next: boolean) {
+    if (!next) langMenuOpen = false;
     onOpenChange?.(next);
   }
 
@@ -95,6 +106,41 @@
     "inline-flex items-center justify-center self-stretch min-w-11 px-2.5 text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-ring";
 </script>
 
+{#snippet langMenu()}
+  {#if langMenuOpen}
+    <div
+      role="menu"
+      onclick={(e) => e.stopPropagation()}
+      class="absolute bottom-full start-0 z-50 mb-2 w-44 rounded-xl border border-sidebar-border bg-card p-1 shadow-xl"
+    >
+      {#each getLanguages() as lang (lang)}
+        <button
+          type="button"
+          role="menuitemradio"
+          aria-checked={lang.toUpperCase() === langLabel}
+          class={cn(
+            "flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-start text-sm transition-colors hover:bg-surface-hover focus-ring",
+            lang.toUpperCase() === langLabel ? "text-primary" : "text-foreground"
+          )}
+          onclick={() => pickLanguage(lang)}
+        >
+          <span class="flex-1 truncate">{LANGUAGE_LABELS[lang]}</span>
+          <span class="text-xs tabular-nums text-muted-foreground">{lang.toUpperCase()}</span>
+        </button>
+      {/each}
+    </div>
+  {/if}
+{/snippet}
+
+<svelte:window
+  onclick={() => {
+    if (langMenuOpen) langMenuOpen = false;
+  }}
+  onkeydown={(e) => {
+    if (e.key === "Escape" && langMenuOpen) langMenuOpen = false;
+  }}
+/>
+
 {#if open}
   <button
     type="button"
@@ -106,6 +152,7 @@
 
 <aside
   class={cn(
+    langMenuOpen ? "overflow-visible" : "overflow-hidden",
     "inset-y-0 inset-s-0 z-50 flex h-svh shrink-0 flex-col border-e border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width,transform] duration-200 motion-reduce:transition-none",
     "fixed top-0",
     collapsed ? "w-16" : "w-64",
@@ -227,16 +274,21 @@
   <div class={cn("mt-auto", iconOnly ? "p-2" : "p-3")}>
     {#if iconOnly}
       <div class={cn("flex flex-col items-center", "gap-1")}>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          onclick={onLangToggle}
-          aria-label={languageLabel}
-          title={`${languageLabel} (${langLabel})`}
-        >
-          <Languages class={ICON_SM} aria-hidden="true" />
-        </Button>
+        <div class="relative">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            onclick={(e) => { e.stopPropagation(); langMenuOpen = !langMenuOpen; }}
+            aria-label={languageLabel}
+            aria-haspopup="menu"
+            aria-expanded={langMenuOpen}
+            title={`${languageLabel} (${langLabel})`}
+          >
+            <Languages class={ICON_SM} aria-hidden="true" />
+          </Button>
+          {@render langMenu()}
+        </div>
         <Button
           type="button"
           variant="ghost"
@@ -268,20 +320,25 @@
       </div>
     {:else}
       <div class="flex w-full items-center rounded-xl border border-sidebar-border/80 bg-card/70">
-        <button
-          type="button"
-          class={cn(
-            "group flex min-w-0 flex-1 items-center rounded-s-xl px-2.5 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-ring",
-            GAP_LOOSE
-          )}
-          onclick={onLangToggle}
-          aria-label={languageLabel}
-          title={languageLabel}
-        >
-          <Languages class={cn(ICON_SM, "shrink-0")} aria-hidden="true" />
-          <span class="truncate">{languageLabel}</span>
-          <span class="ms-auto text-xs tabular-nums">{langLabel}</span>
-        </button>
+        <div class="relative min-w-0 flex-1">
+          <button
+            type="button"
+            class={cn(
+              "group flex w-full min-w-0 items-center rounded-s-xl px-2.5 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-ring",
+              GAP_LOOSE
+            )}
+            onclick={(e) => { e.stopPropagation(); langMenuOpen = !langMenuOpen; }}
+            aria-label={languageLabel}
+            aria-haspopup="menu"
+            aria-expanded={langMenuOpen}
+            title={languageLabel}
+          >
+            <Languages class={cn(ICON_SM, "shrink-0")} aria-hidden="true" />
+            <span class="truncate">{languageLabel}</span>
+            <span class="ms-auto text-xs tabular-nums">{langLabel}</span>
+          </button>
+          {@render langMenu()}
+        </div>
         <button
           type="button"
           class={cn(footerIconBtn, "border-s border-sidebar-border")}
