@@ -71,6 +71,11 @@
 
   let sidebarOpen = $state(false);
   let sidebarCollapsed = $state(readCollapsed());
+  /** Mobile keeps its own rail state so collapsing the phone view does not persist onto desktop. */
+  let mobileCollapsed = $state(true);
+  let isDesktop = $state(
+    typeof window === "undefined" ? true : window.matchMedia("(min-width: 768px)").matches
+  );
   let langLabel = $state(getLanguage().toUpperCase());
   let headerScrolled = $state(false);
 
@@ -102,6 +107,27 @@
       /* ignore */
     }
   });
+
+  $effect(() => {
+    const mq = window.matchMedia("(min-width: 768px)");
+    const update = () => (isDesktop = mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  });
+
+  const sidebarRail = $derived(isDesktop ? sidebarCollapsed : mobileCollapsed);
+
+  /** Mobile drawer toggles between the full panel and the icon rail; it never disappears. */
+  function toggleMobileSidebar() {
+    if (sidebarOpen) {
+      sidebarOpen = false;
+      if (!isDesktop) mobileCollapsed = true;
+    } else {
+      mobileCollapsed = false;
+      sidebarOpen = true;
+    }
+  }
 
   $effect(() => {
     const stopRouter = initRouter();
@@ -196,8 +222,16 @@
 <div class="flex min-h-svh bg-background text-foreground">
   <AppSidebar
     open={sidebarOpen}
-    collapsed={sidebarCollapsed}
-    onOpenChange={(open) => (sidebarOpen = open)}
+    collapsed={sidebarRail}
+    onOpenChange={(open) => {
+      sidebarOpen = open;
+      // On mobile the drawer always folds back to the icon rail instead of vanishing.
+      if (!open && !isDesktop) mobileCollapsed = true;
+    }}
+    onCollapsedChange={(collapsed) => {
+      if (isDesktop) sidebarCollapsed = collapsed;
+      else mobileCollapsed = collapsed;
+    }}
     currentView={router.view}
     brand={i18n.t("brand")}
     projectLabel={i18n.t("tab-project")}
@@ -212,6 +246,14 @@
     closeLabel={i18n.t("nav-close")}
     {onLangToggle}
   />
+  <!-- Mobile spacer: keeps page content clear of the collapsed icon rail -->
+  <div
+    class={cn(
+      "shrink-0 transition-[width] duration-200 md:hidden",
+      sidebarRail ? "w-16" : "w-0"
+    )}
+    aria-hidden="true"
+  ></div>
   <!-- Desktop spacer: sidebar is fixed and out of flow -->
   <div
     class={cn(
@@ -225,8 +267,7 @@
     <header
       class={cn(
         "fixed top-0 inset-e-0 z-30 flex h-14 items-center border-b transition-[background-color,border-color,backdrop-filter,inset-inline-start] duration-200",
-        "inset-s-0",
-        sidebarCollapsed ? "md:inset-s-16" : "md:inset-s-64",
+        sidebarRail ? "inset-s-16" : cn("inset-s-0", "md:inset-s-64"),
         headerScrolled
           ? "border-border/40 bg-background/55 backdrop-blur-xl"
           : "border-border bg-background/95 backdrop-blur-md"
@@ -237,7 +278,7 @@
           variant="ghost"
           size="icon"
           class="md:hidden shrink-0"
-          onclick={() => (sidebarOpen = true)}
+          onclick={toggleMobileSidebar}
           aria-label={i18n.t("nav-menu")}
         >
           <Menu class={ICON} aria-hidden="true" />

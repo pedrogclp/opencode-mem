@@ -43,6 +43,7 @@
     closeLabel: string;
     onOpenChange?: (open: boolean) => void;
     onLangToggle?: () => void;
+    onCollapsedChange?: (collapsed: boolean) => void;
   };
 
   let {
@@ -62,6 +63,7 @@
     closeLabel,
     onOpenChange,
     onLangToggle,
+    onCollapsedChange,
   }: Props = $props();
 
   const themeStore = createTheme();
@@ -104,11 +106,11 @@
 
 <aside
   class={cn(
-    "inset-y-0 inset-s-0 z-50 flex h-svh shrink-0 flex-col overflow-hidden border-e border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width,transform] duration-200 motion-reduce:transition-none",
-    "fixed top-0 translate-x-0!",
-    collapsed ? "md:w-16" : "md:w-64",
-    "w-64",
-    open ? "translate-x-0" : "max-md:-translate-x-full max-md:rtl:translate-x-full"
+    "inset-y-0 inset-s-0 z-50 flex h-svh shrink-0 flex-col border-e border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width,transform] duration-200 motion-reduce:transition-none",
+    "fixed top-0",
+    collapsed ? "w-16" : "w-64",
+    open || collapsed ? "translate-x-0" : "-translate-x-full rtl:translate-x-full",
+    "md:translate-x-0 md:rtl:translate-x-0"
   )}
 >
   <div
@@ -136,15 +138,20 @@
         </span>
       {/if}
     </a>
-    <Button
-      variant="ghost"
-      size="icon-sm"
-      class="md:hidden shrink-0"
-      onclick={() => setOpen(false)}
-      aria-label={closeLabel}
-    >
-      <X class={ICON} aria-hidden="true" />
-    </Button>
+    {#if !iconOnly}
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        class="md:hidden shrink-0"
+        onclick={() => {
+          setOpen(false);
+          onCollapsedChange?.(true);
+        }}
+        aria-label={closeLabel}
+      >
+        <X class={ICON} aria-hidden="true" />
+      </Button>
+    {/if}
   </div>
 
   <nav class="flex flex-1 flex-col gap-1 p-2" aria-label="Main">
